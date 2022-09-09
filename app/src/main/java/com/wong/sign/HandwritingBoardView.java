@@ -11,12 +11,14 @@ import android.os.Environment;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.VelocityTracker;
 import android.view.View;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -35,10 +37,10 @@ public class HandwritingBoardView extends View {
     private static List<DrawPath> savePath;// 保存Path路径的集合,用List集合来模拟栈
     private int screenWidth, screenHeight;// 手写板的长宽
     private Paint mBitmapPaint;// 画布的画笔
-    private int mPenSize = 10;// 画笔宽度 px
+    private int mPenSize = DEFAULT_SIZE;// 画笔宽度 px
     private int mPenColor = Color.BLACK;// 画笔默认颜色
     private int mPanelColor = Color.TRANSPARENT;// 背景色（指最终签名结果文件的背景颜色，默认为透明色）
-
+    List<String> colors = Arrays.asList("#020024","#080021","#090020","#120c24","#181226","#1b1627","#1d1a27","#26242b","#2a292c","#212121","#333333","#3a3a3a","#3d3d3d","#424242","#464646","#484848","#505050");
 
     public HandwritingBoardView(Context context) {
         super(context);
@@ -114,6 +116,7 @@ public class HandwritingBoardView extends View {
             mX = x;// 记录当前x坐标
             mY = y;// 记录当前y坐标
         }
+
     }
 
     /**
@@ -162,15 +165,45 @@ public class HandwritingBoardView extends View {
         }
         return mBitmap;
     }
+    VelocityTracker mVelocityTracker;
 
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        //创建惯性滑动速度追踪类对象
+        if (mVelocityTracker == null) {
+            mVelocityTracker = VelocityTracker.obtain();
+        }
+    }
+    public static final String TAG = "HandwritingBoardView";
+
+    @Override
+    protected void onDetachedFromWindow() {
+        //回收
+        mVelocityTracker.clear();
+        mVelocityTracker.recycle();
+        super.onDetachedFromWindow();
+
+    }
+
+    int preSize =20;
+    Float preX;
+    Float preY;
+    int preLest=0;
+    public static final int DEFAULT_SIZE = 20;
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         // 获得当前点的坐标(x,y)
         float x = event.getX();
         float y = event.getY();
+        if (preX==null&&preY==null){
+            preX = x;
+            preY = y;
+        }
         switch (event.getAction()) {
             // 点击屏幕时触发
             case MotionEvent.ACTION_DOWN:
+                setPenSize(DEFAULT_SIZE);
                 // 每次点击时，就重新绘制一个新的路径Path
                 mPath = new Path();
                 // 每一次记录的路径对象是不一样的
@@ -180,9 +213,71 @@ public class HandwritingBoardView extends View {
                 touchStart(x, y);
                 // 更新视图
                 invalidate();
+                preSize = mPenSize;
                 break;
             // 移动
             case MotionEvent.ACTION_MOVE:
+                //将事件加入到VelocityTracker类实例中
+                mVelocityTracker.addMovement(event);
+                //计算1秒内滑动的像素个数
+                mVelocityTracker.computeCurrentVelocity(1000);
+                //X轴方向的速度
+                int xVelocity = (int) mVelocityTracker.getXVelocity();
+                //Y轴方向的速度
+                int yVelocity = (int) mVelocityTracker.getYVelocity();
+                int speedV = (int) Math.sqrt(Math.pow(xVelocity,2)+Math.pow(yVelocity,2));
+                Log.d(TAG, "onTouchEvent: speedV"+speedV);
+                int least = speedV%10000;
+                Log.d(TAG, "onTouchEvent: least="+least);
+                int count = 0;
+                  for (int i=0;i<10000;i=i+100){
+                      count++;
+//                      Log.d(TAG, "onTouchEvent: count"+count);
+                      if (least<=i){
+                          mPenSize = 31-count;
+                          break;
+                      }
+                  }
+//                mPenSize = 31-speedV;
+
+                if (mPenSize<10){
+                    mPenSize =10;
+                }
+                if (mPenSize!=preSize){
+                    if (mPenSize>preSize+3) {
+                        mPenSize = preSize+2;
+                    }else if (mPenSize<preSize-3){
+                        mPenSize = preSize-2;
+                    }else
+                    if (mPenSize>preSize+1) {
+                        mPenSize = preSize+1;
+                    }else if (mPenSize<preSize-1){
+                        mPenSize = preSize-1;
+                    }
+                    preSize = mPenSize;
+                    if (31-mPenSize>colors.size()-1){
+                        mPaint.setColor(Color.parseColor(colors.get(colors.size()-1)));
+                    }else {
+                        mPaint.setColor(Color.parseColor(colors.get(31-mPenSize)));
+                    }
+
+                    setPenSize(mPenSize);
+                    touchUp();
+                    // 更新视图
+                    invalidate();
+                    // 每次点击时，就重新绘制一个新的路径Path
+                    mPath = new Path();
+                    // 每一次记录的路径对象是不一样的
+                    drawPath = new DrawPath();
+                    drawPath.path = mPath;
+                    drawPath.paint = mPaint;
+                    touchStart(preX, preY);
+
+                    // 更新视图
+                    invalidate();
+                }
+
+                Log.d(TAG, "onTouchEvent: mPenSize="+mPenSize);
                 touchMove(x, y);
                 // 更新视图
                 invalidate();
@@ -192,8 +287,11 @@ public class HandwritingBoardView extends View {
                 touchUp();
                 // 更新视图
                 invalidate();
+
                 break;
         }
+        preX = x;
+        preY = y ;
         return true;
     }
 
@@ -203,7 +301,7 @@ public class HandwritingBoardView extends View {
      * @param size
      */
     public void setPenSize(int size) {
-        mPenSize = size > 0 ? size : 10;
+        mPenSize = size > 8 ? size : 8;
         this.mPenSize = size;
         if(mPaint != null){
             mPaint.setStrokeWidth(mPenSize);

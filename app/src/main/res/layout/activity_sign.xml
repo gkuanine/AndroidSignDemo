@@ -34,18 +34,18 @@
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toRightOf="@id/btn_sign_confirm"
-        app:layout_constraintRight_toLeftOf="@id/btn_undo"
-        app:layout_constraintTop_toBottomOf="@id/ll_sign_panel"/>
-    <Button
-        android:text="撤销"
-        android:onClick="undo"
-        android:id="@+id/btn_undo"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toRightOf="@id/btn_redo"
         app:layout_constraintRight_toLeftOf="@id/btn_sign_cancel"
         app:layout_constraintTop_toBottomOf="@id/ll_sign_panel"/>
+<!--    <Button-->
+<!--        android:text="撤销"-->
+<!--        android:onClick="undo"-->
+<!--        android:id="@+id/btn_undo"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        app:layout_constraintBottom_toBottomOf="parent"-->
+<!--        app:layout_constraintLeft_toRightOf="@id/btn_redo"-->
+<!--        app:layout_constraintRight_toLeftOf="@id/btn_sign_cancel"-->
+<!--        app:layout_constraintTop_toBottomOf="@id/ll_sign_panel"/>-->
     <Button
         android:text="取消"
         android:onClick="onCancelClick"
@@ -53,7 +53,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toRightOf="@id/btn_undo"
+        app:layout_constraintLeft_toRightOf="@id/btn_redo"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/ll_sign_panel"/>
 
